@@ -1,0 +1,1 @@
+is a resume and job description matching project. It analyzes a resume against a job description and identifies matching skills, missing skills, matching qualifications, missing requirements, and areas to improve. The goal is to help users see how closely their resume matches a job and what to improve.

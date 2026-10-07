@@ -1,0 +1,2207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ResuMatch | AI Resume Analyzer</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f7fb;
+            color: #1f2937;
+            min-height: 100vh;
+        }
+
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+
+        .sidebar {
+            width: 240px;
+            background: #111827;
+            color: white;
+            padding: 25px 15px;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .menu {
+            list-style: none;
+        }
+
+        .menu li {
+            margin-bottom: 10px;
+        }
+
+        .menu button {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: #d1d5db;
+            padding: 13px 15px;
+            text-align: left;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        .menu button:hover,
+        .menu button.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        /* =========================
+           MAIN
+        ========================= */
+
+        .main {
+            flex: 1;
+            padding: 35px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #6b7280;
+        }
+
+        /* =========================
+           GRID
+        ========================= */
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .card p {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        /* =========================
+           UPLOAD
+        ========================= */
+
+        .upload-card {
+            grid-column: span 2;
+            text-align: center;
+            border: 2px dashed #cbd5e1;
+        }
+
+        .upload-box {
+            padding: 35px 20px;
+        }
+
+        .upload-box input {
+            display: none;
+        }
+
+        .upload-button {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 13px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .upload-button:hover {
+            background: #1d4ed8;
+        }
+
+        #fileName {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        #analyzeButton {
+            display: none;
+            margin: 18px auto 0;
+            border: none;
+            background: #16a34a;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        #analyzeButton:hover {
+            background: #15803d;
+        }
+
+        #analyzeButton:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        #statusMessage {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        /* =========================
+           ATS SCORE
+        ========================= */
+
+        .score-card {
+            text-align: center;
+        }
+
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2563eb;
+            margin: 15px 0;
+        }
+
+        .score-confidence {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* =========================
+           ATS CATEGORY SUMMARY
+        ========================= */
+
+        .category-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .category-box {
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .category-box strong {
+            display: block;
+            font-size: 25px;
+            margin-bottom: 4px;
+        }
+
+        .category-box span {
+            font-size: 12px;
+        }
+
+        .matched-box {
+            background: #ecfdf5;
+            color: #15803d;
+        }
+
+        .improve-box {
+            background: #fffbeb;
+            color: #b45309;
+        }
+
+        .missing-box {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* =========================
+           ATS CATEGORY LIST
+        ========================= */
+
+        .category-section {
+            grid-column: span 2;
+        }
+
+        .category-list {
+            margin-top: 18px;
+        }
+
+        .category-item {
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            background: #fafafa;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .category-name {
+            font-weight: bold;
+        }
+
+        .category-score {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .progress {
+            height: 7px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            background: #2563eb;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .category-status {
+            display: inline-block;
+            margin-top: 9px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* =========================
+           ADVICE
+        ========================= */
+
+        .suggestions {
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+
+        .suggestions li {
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .advice-item {
+            list-style: none;
+            padding: 14px;
+            border-radius: 10px;
+            background: #f8fafc;
+            margin-bottom: 10px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .priority {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .priority.high {
+            color: #dc2626;
+        }
+
+        .priority.medium {
+            color: #d97706;
+        }
+
+        .priority.low {
+            color: #15803d;
+        }
+
+        .advice-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* =========================
+           SKILLS
+        ========================= */
+
+        .skills-list {
+            margin-top: 12px;
+            line-height: 1.8;
+            color: #374151;
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .skill-tag {
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 7px 11px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .skill-tag.missing {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* =========================
+           QUALITY REPORT
+        ========================= */
+
+        .quality-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .quality-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .quality-item span {
+            display: block;
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+        .quality-item strong {
+            font-size: 18px;
+        }
+
+        /* =========================
+           STRENGTHS
+        ========================= */
+
+        .strength-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .strength-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .strength-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* =========================
+           BEFORE / AFTER
+        ========================= */
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .before,
+        .after {
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .before {
+            background: #fef2f2;
+        }
+
+        .after {
+            background: #ecfdf5;
+        }
+
+        .before strong,
+        .after strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* =========================
+           REPORT BUTTON
+        ========================= */
+
+        .report-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .report-button {
+            border: none;
+            padding: 11px 18px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #111827;
+            color: white;
+        }
+
+        .report-button:hover {
+            background: #1f2937;
+        }
+
+        /* =========================
+           EMPTY STATE
+        ========================= */
+
+        .empty-state {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        /* =========================
+           HIDDEN
+        ========================= */
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 900px) {
+
+            .sidebar {
+                width: 200px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .upload-card,
+            .category-section {
+                grid-column: span 1;
+            }
+
+            .category-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 650px) {
+
+            .app {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .main {
+                padding: 20px;
+            }
+
+            .quality-grid,
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================
+         SIDEBAR
+    ========================= -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            ResuMatch
+        </div>
+
+        <ul class="menu">
+
+            <li>
+                <button class="active" type="button">
+                    Dashboard
+                </button>
+            </li>
+
+            <li>
+                <button type="button">
+                    Analyze Resume
+                </button>
+            </li>
+
+            <li>
+                <button type="button">
+                    Results
+                </button>
+            </li>
+
+            <li>
+                <button type="button">
+                    Resume Improvement
+                </button>
+            </li>
+
+            <li>
+                <button type="button">
+                    Tips
+                </button>
+            </li>
+
+            <li>
+                <button type="button">
+                    History
+                </button>
+            </li>
+
+        </ul>
+
+    </aside>
+
+
+    <!-- =========================
+         MAIN
+    ========================= -->
+
+    <main class="main">
+
+        <div class="header">
+
+            <h1>
+                Resume Dashboard
+            </h1>
+
+            <p>
+                Analyze your resume, understand your ATS performance,
+                and discover exactly how to improve it.
+            </p>
+
+        </div>
+
+
+        <div class="grid">
+
+            <!-- =========================
+                 UPLOAD
+            ========================= -->
+
+            <div class="card upload-card">
+
+                <div class="upload-box">
+
+                    <h2>
+                        Upload Your Resume
+                    </h2>
+
+                    <p>
+                        Upload your resume to receive a detailed ATS analysis.
+                    </p>
+
+                    <label
+                        for="resumeFile"
+                        class="upload-button"
+                    >
+                        Choose Resume
+                    </label>
+
+                    <input
+                        type="file"
+                        id="resumeFile"
+                        accept=".pdf,.doc,.docx"
+                    >
+
+                    <div id="fileName">
+                        No file selected
+                    </div>
+
+                    <button
+                        type="button"
+                        id="analyzeButton"
+                        onclick="analyzeResume()"
+                    >
+                        Analyze Resume
+                    </button>
+
+                    <div id="statusMessage"></div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 ATS SCORE
+            ========================= -->
+
+            <div class="card score-card">
+
+                <h2>
+                    ATS Score
+                </h2>
+
+                <div
+                    class="score"
+                    id="atsScore"
+                >
+                    0%
+                </div>
+
+                <span
+                    class="score-confidence"
+                    id="scoreConfidence"
+                >
+                    Not analyzed
+                </span>
+
+                <p id="scoreMessage">
+                    Upload your resume to calculate your ATS compatibility score.
+                </p>
+
+                <div class="category-summary">
+
+                    <div class="category-box matched-box">
+
+                        <strong id="matchedCount">
+                            0
+                        </strong>
+
+                        <span>
+                            Matched
+                        </span>
+
+                    </div>
+
+                    <div class="category-box improve-box">
+
+                        <strong id="improveCount">
+                            0
+                        </strong>
+
+                        <span>
+                            Needs Improvement
+                        </span>
+
+                    </div>
+
+                    <div class="category-box missing-box">
+
+                        <strong id="missingCount">
+                            0
+                        </strong>
+
+                        <span>
+                            Missing
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <p style="margin-top:15px; font-weight:bold;">
+
+                    ATS Categories:
+                    <span id="categoryTotal">
+                        18
+                    </span>
+                    / 18
+
+                </p>
+
+            </div>
+
+
+            <!-- =========================
+                 RESUME IMPROVEMENT ADVICE
+            ========================= -->
+
+            <div class="card">
+
+                <h2>
+                    Resume Improvement
+                </h2>
+
+                <p>
+                    Personalized suggestions generated from your resume analysis.
+                </p>
+
+                <ul
+                    class="suggestions"
+                    id="adviceList"
+                >
+
+                    <li>
+                        Upload your resume to receive personalized improvement advice.
+                    </li>
+
+                </ul>
+
+            </div>
+
+
+            <!-- =========================
+                 MATCHING SKILLS
+            ========================= -->
+
+            <div class="card">
+
+                <h2>
+                    Top Matching Skills
+                </h2>
+
+                <p>
+                    Skills detected from your resume.
+                </p>
+
+                <div
+                    class="skill-tags"
+                    id="matchingSkills"
+                >
+                </div>
+
+                <p
+                    class="empty-state"
+                    id="matchingSkillsEmpty"
+                >
+                    No skills detected yet.
+                </p>
+
+            </div>
+
+
+            <!-- =========================
+                 SKILLS TO IMPROVE
+            ========================= -->
+
+            <div class="card">
+
+                <h2>
+                    Skills to Improve
+                </h2>
+
+                <p>
+                    Recommended skills based on the current resume analysis.
+                </p>
+
+                <div
+                    class="skill-tags"
+                    id="skillsToImprove"
+                >
+                </div>
+
+                <p
+                    class="empty-state"
+                    id="skillsToImproveEmpty"
+                >
+                    No recommendations yet.
+                </p>
+
+            </div>
+
+
+            <!-- =========================
+                 ATS CATEGORY ANALYSIS
+            ========================= -->
+
+            <div class="card category-section">
+
+                <h2>
+                    ATS Category Analysis
+                </h2>
+
+                <p>
+                    Your resume is evaluated against all 18 ATS criteria.
+                    Only the categories supported by your resume are counted as matched.
+                </p>
+
+                <div
+                    class="category-list"
+                    id="categoryList"
+                >
+
+                    <p class="empty-state">
+                        Upload and analyze your resume to see the 18-category breakdown.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 RESUME QUALITY REPORT
+            ========================= -->
+
+            <div class="card">
+
+                <h2>
+                    Resume Quality Report
+                </h2>
+
+                <div class="quality-grid">
+
+                    <div class="quality-item">
+                        <span>
+                            Word Count
+                        </span>
+                        <strong id="wordCount">
+                            —
+                        </strong>
+                    </div>
+
+                    <div class="quality-item">
+                        <span>
+                            Pages
+                        </span>
+                        <strong id="pageCount">
+                            —
+                        </strong>
+                    </div>
+
+                    <div class="quality-item">
+                        <span>
+                            Sections
+                        </span>
+                        <strong id="sectionCount">
+                            —
+                        </strong>
+                    </div>
+
+                    <div class="quality-item">
+                        <span>
+                            Action Verbs
+                        </span>
+                        <strong id="actionCount">
+                            —
+                        </strong>
+                    </div>
+
+                    <div class="quality-item">
+                        <span>
+                            Metrics
+                        </span>
+                        <strong id="metricCount">
+                            —
+                        </strong>
+                    </div>
+
+                    <div class="quality-item">
+                        <span>
+                            ATS Criteria
+                        </span>
+                        <strong id="qualityCriteria">
+                            18
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 RESUME STRENGTHS
+            ========================= -->
+
+            <div class="card">
+
+                <h2>
+                    Resume Strengths
+                </h2>
+
+                <ul
+                    class="strength-list"
+                    id="strengthList"
+                >
+
+                    <li>
+                        Upload your resume to identify strengths.
+                    </li>
+
+                </ul>
+
+            </div>
+
+
+            <!-- =========================
+                 BEFORE / AFTER
+            ========================= -->
+
+            <div class="card category-section">
+
+                <h2>
+                    Before vs Improvement Guidance
+                </h2>
+
+                <p>
+                    Examples of how weak resume content can be improved.
+                </p>
+
+                <div class="before-after">
+
+                    <div class="before">
+
+                        <strong>
+                            Before
+                        </strong>
+
+                        <p>
+                            Worked on a Python project.
+                        </p>
+
+                    </div>
+
+                    <div class="after">
+
+                        <strong>
+                            Better
+                        </strong>
+
+                        <p>
+                            Developed a Python-based application and implemented
+                            data processing functionality.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="before-after">
+
+                    <div class="before">
+
+                        <strong>
+                            Before
+                        </strong>
+
+                        <p>
+                            Good knowledge of SQL.
+                        </p>
+
+                    </div>
+
+                    <div class="after">
+
+                        <strong>
+                            Better
+                        </strong>
+
+                        <p>
+                            Used SQL to query, transform, and analyze structured datasets.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================
+                 REPORT ACTIONS
+            ========================= -->
+
+            <div class="card category-section">
+
+                <h2>
+                    Analysis Report
+                </h2>
+
+                <p>
+                    Review your complete ATS analysis and improvement suggestions.
+                </p>
+
+                <div class="report-actions">
+
+                    <button
+                        type="button"
+                        class="report-button"
+                        onclick="downloadAnalysis()"
+                    >
+                        Download Analysis
+                    </button>
+
+                    <button
+                        type="button"
+                        class="report-button"
+                        onclick="resetAnalysis()"
+                    >
+                        Analyze Another Resume
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+
+    // =========================================================
+    // ELEMENTS
+    // =========================================================
+
+    const resumeFile =
+        document.getElementById("resumeFile");
+
+    const fileName =
+        document.getElementById("fileName");
+
+    const analyzeButton =
+        document.getElementById("analyzeButton");
+
+    const statusMessage =
+        document.getElementById("statusMessage");
+
+    let latestAnalysis = null;
+
+
+    // =========================================================
+    // FILE SELECTION
+    // =========================================================
+
+    resumeFile.addEventListener(
+        "change",
+        function () {
+
+            if (resumeFile.files.length === 0) {
+
+                fileName.textContent =
+                    "No file selected";
+
+                analyzeButton.style.display =
+                    "none";
+
+                statusMessage.textContent =
+                    "";
+
+                return;
+            }
+
+            const file =
+                resumeFile.files[0];
+
+            fileName.textContent =
+                "Selected file: " + file.name;
+
+            analyzeButton.style.display =
+                "inline-block";
+
+            statusMessage.textContent =
+                "Ready to analyze your resume.";
+
+        }
+    );
+
+
+    // =========================================================
+    // ANALYZE RESUME
+    // =========================================================
+
+    async function analyzeResume() {
+
+        if (resumeFile.files.length === 0) {
+
+            statusMessage.textContent =
+                "Please select a resume first.";
+
+            return;
+        }
+
+        const file =
+            resumeFile.files[0];
+
+        const formData =
+            new FormData();
+
+        formData.append(
+            "resume",
+            file
+        );
+
+        analyzeButton.disabled =
+            true;
+
+        analyzeButton.textContent =
+            "Analyzing...";
+
+        statusMessage.textContent =
+            "Reading your resume and calculating ATS score...";
+
+        try {
+
+            const response =
+                await fetch(
+                    "/upload",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok || !data.success) {
+
+                throw new Error(
+                    data.message ||
+                    "Resume analysis failed."
+                );
+
+            }
+
+            latestAnalysis =
+                data;
+
+
+            // =================================================
+            // ATS SCORE
+            // =================================================
+
+            document.getElementById(
+                "atsScore"
+            ).textContent =
+                data.ats_score + "%";
+
+            document.getElementById(
+                "scoreConfidence"
+            ).textContent =
+                data.score_confidence ||
+                "Analyzed";
+
+            document.getElementById(
+                "scoreMessage"
+            ).textContent =
+                "Your resume has been analyzed successfully.";
+
+
+            // =================================================
+            // CATEGORIES
+            // =================================================
+
+            renderCategories(
+                data.criteria || []
+            );
+
+
+            // =================================================
+            // ADVICE
+            // =================================================
+
+            renderAdvice(
+                data.improvement_advice || []
+            );
+
+
+            // =================================================
+            // SKILLS
+            // =================================================
+
+            renderSkills(
+                data.top_matching_skills || [],
+                data.skills_to_improve || []
+            );
+
+
+            // =================================================
+            // QUALITY REPORT
+            // =================================================
+
+            renderQualityReport(
+                data.analysis || {},
+                data.criteria || []
+            );
+
+
+            // =================================================
+            // STRENGTHS
+            // =================================================
+
+            renderStrengths(
+                data.criteria || []
+            );
+
+
+            statusMessage.textContent =
+                "Resume analyzed successfully.";
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Analysis error:",
+                error
+            );
+
+            statusMessage.textContent =
+                error.message ||
+                "Something went wrong while analyzing the resume.";
+
+        }
+
+        finally {
+
+            analyzeButton.disabled =
+                false;
+
+            analyzeButton.textContent =
+                "Analyze Resume";
+
+        }
+
+    }
+
+
+    // =========================================================
+    // RENDER ATS CATEGORIES
+    // =========================================================
+
+    function renderCategories(criteria) {
+
+        const categoryList =
+            document.getElementById(
+                "categoryList"
+            );
+
+        categoryList.innerHTML =
+            "";
+
+        let matched =
+            0;
+
+        let improvement =
+            0;
+
+        let missing =
+            0;
+
+
+        criteria.forEach(
+            function (item) {
+
+                const max =
+                    Number(item.max_score || 0);
+
+                const score =
+                    Number(item.score || 0);
+
+                const ratio =
+                    max > 0
+                        ? score / max
+                        : 0;
+
+                let status =
+                    item.status || "";
+
+                /*
+                    We keep N/A separate because the backend
+                    reserves Project 2 criteria for later.
+                */
+
+                if (status === "N/A") {
+
+                    return;
+                }
+
+                if (
+                    ratio >= 0.80
+                ) {
+
+                    matched++;
+
+                }
+                else if (
+                    ratio > 0
+                ) {
+
+                    improvement++;
+
+                }
+                else {
+
+                    missing++;
+
+                }
+
+
+                const percentage =
+                    Math.round(
+                        ratio * 100
+                    );
+
+
+                const itemDiv =
+                    document.createElement(
+                        "div"
+                    );
+
+                itemDiv.className =
+                    "category-item";
+
+
+                const header =
+                    document.createElement(
+                        "div"
+                    );
+
+                header.className =
+                    "category-header";
+
+
+                const name =
+                    document.createElement(
+                        "div"
+                    );
+
+                name.className =
+                    "category-name";
+
+                name.textContent =
+                    item.criterion;
+
+
+                const scoreText =
+                    document.createElement(
+                        "div"
+                    );
+
+                scoreText.className =
+                    "category-score";
+
+                scoreText.textContent =
+                    score +
+                    " / " +
+                    max;
+
+
+                header.appendChild(
+                    name
+                );
+
+                header.appendChild(
+                    scoreText
+                );
+
+
+                const progress =
+                    document.createElement(
+                        "div"
+                    );
+
+                progress.className =
+                    "progress";
+
+
+                const bar =
+                    document.createElement(
+                        "div"
+                    );
+
+                bar.className =
+                    "progress-bar";
+
+                bar.style.width =
+                    percentage + "%";
+
+
+                progress.appendChild(
+                    bar
+                );
+
+
+                const statusText =
+                    document.createElement(
+                        "span"
+                    );
+
+                statusText.className =
+                    "category-status";
+
+                statusText.textContent =
+                    status ||
+                    "Analyzed";
+
+
+                if (
+                    ratio >= 0.80
+                ) {
+
+                    statusText.style.color =
+                        "#15803d";
+
+                }
+                else if (
+                    ratio > 0
+                ) {
+
+                    statusText.style.color =
+                        "#b45309";
+
+                }
+                else {
+
+                    statusText.style.color =
+                        "#dc2626";
+
+                }
+
+
+                const explanation =
+                    document.createElement(
+                        "p"
+                    );
+
+                explanation.style.marginTop =
+                    "8px";
+
+                explanation.style.fontSize =
+                    "13px";
+
+                explanation.textContent =
+                    item.explanation ||
+                    "";
+
+
+                itemDiv.appendChild(
+                    header
+                );
+
+                itemDiv.appendChild(
+                    progress
+                );
+
+                itemDiv.appendChild(
+                    statusText
+                );
+
+                itemDiv.appendChild(
+                    explanation
+                );
+
+
+                categoryList.appendChild(
+                    itemDiv
+                );
+
+            }
+        );
+
+
+        document.getElementById(
+            "matchedCount"
+        ).textContent =
+            matched;
+
+        document.getElementById(
+            "improveCount"
+        ).textContent =
+            improvement;
+
+        document.getElementById(
+            "missingCount"
+        ).textContent =
+            missing;
+
+
+        document.getElementById(
+            "categoryTotal"
+        ).textContent =
+            criteria.filter(
+                item =>
+                    item.status !== "N/A"
+            ).length;
+
+    }
+
+
+    // =========================================================
+    // RENDER ADVICE
+    // =========================================================
+
+    function renderAdvice(advice) {
+
+        const adviceList =
+            document.getElementById(
+                "adviceList"
+            );
+
+        adviceList.innerHTML =
+            "";
+
+        if (
+            advice.length === 0
+        ) {
+
+            const li =
+                document.createElement(
+                    "li"
+                );
+
+            li.textContent =
+                "No major improvement areas detected.";
+
+            adviceList.appendChild(
+                li
+            );
+
+            return;
+        }
+
+
+        advice.forEach(
+            function (item) {
+
+                const li =
+                    document.createElement(
+                        "li"
+                    );
+
+                li.className =
+                    "advice-item";
+
+
+                const priority =
+                    document.createElement(
+                        "div"
+                    );
+
+                priority.className =
+                    "priority " +
+                    String(
+                        item.priority || "low"
+                    ).toLowerCase();
+
+                priority.textContent =
+                    item.priority ||
+                    "Low";
+
+
+                const title =
+                    document.createElement(
+                        "div"
+                    );
+
+                title.className =
+                    "advice-title";
+
+                title.textContent =
+                    item.title ||
+                    "Improvement";
+
+
+                const text =
+                    document.createElement(
+                        "div"
+                    );
+
+                text.textContent =
+                    item.advice ||
+                    "";
+
+
+                li.appendChild(
+                    priority
+                );
+
+                li.appendChild(
+                    title
+                );
+
+                li.appendChild(
+                    text
+                );
+
+
+                adviceList.appendChild(
+                    li
+                );
+
+            }
+        );
+
+    }
+
+
+    // =========================================================
+    // RENDER SKILLS
+    // =========================================================
+
+    function renderSkills(
+        matching,
+        improve
+    ) {
+
+        const matchingContainer =
+            document.getElementById(
+                "matchingSkills"
+            );
+
+        const improveContainer =
+            document.getElementById(
+                "skillsToImprove"
+            );
+
+        const matchingEmpty =
+            document.getElementById(
+                "matchingSkillsEmpty"
+            );
+
+        const improveEmpty =
+            document.getElementById(
+                "skillsToImproveEmpty"
+            );
+
+
+        matchingContainer.innerHTML =
+            "";
+
+        improveContainer.innerHTML =
+            "";
+
+
+        matchingEmpty.style.display =
+            matching.length
+                ? "none"
+                : "block";
+
+
+        improveEmpty.style.display =
+            improve.length
+                ? "none"
+                : "block";
+
+
+        matching.forEach(
+            function (skill) {
+
+                const tag =
+                    document.createElement(
+                        "span"
+                    );
+
+                tag.className =
+                    "skill-tag";
+
+                tag.textContent =
+                    skill;
+
+                matchingContainer.appendChild(
+                    tag
+                );
+
+            }
+        );
+
+
+        improve.forEach(
+            function (skill) {
+
+                const tag =
+                    document.createElement(
+                        "span"
+                    );
+
+                tag.className =
+                    "skill-tag missing";
+
+                tag.textContent =
+                    skill;
+
+                improveContainer.appendChild(
+                    tag
+                );
+
+            }
+        );
+
+    }
+
+
+    // =========================================================
+    // QUALITY REPORT
+    // =========================================================
+
+    function renderQualityReport(
+        analysis,
+        criteria
+    ) {
+
+        document.getElementById(
+            "wordCount"
+        ).textContent =
+            analysis.word_count ?? "—";
+
+
+        document.getElementById(
+            "pageCount"
+        ).textContent =
+            analysis.page_count ?? "—";
+
+
+        const sections =
+            analysis.sections || {};
+
+        document.getElementById(
+            "sectionCount"
+        ).textContent =
+            Object.values(
+                sections
+            ).filter(
+                Boolean
+            ).length;
+
+
+        document.getElementById(
+            "actionCount"
+        ).textContent =
+            (analysis.action_words || []).length;
+
+
+        document.getElementById(
+            "metricCount"
+        ).textContent =
+            (analysis.quantifiable_metrics || []).length;
+
+
+        document.getElementById(
+            "qualityCriteria"
+        ).textContent =
+            criteria.length;
+
+    }
+
+
+    // =========================================================
+    // RESUME STRENGTHS
+    // =========================================================
+
+    function renderStrengths(criteria) {
+
+        const strengthList =
+            document.getElementById(
+                "strengthList"
+            );
+
+        strengthList.innerHTML =
+            "";
+
+        const strong =
+            criteria.filter(
+                function (item) {
+
+                    if (
+                        item.status === "N/A"
+                    ) {
+
+                        return false;
+                    }
+
+                    const max =
+                        Number(
+                            item.max_score || 0
+                        );
+
+                    const score =
+                        Number(
+                            item.score || 0
+                        );
+
+                    return (
+                        max > 0 &&
+                        score / max >= 0.80
+                    );
+
+                }
+            );
+
+
+        if (
+            strong.length === 0
+        ) {
+
+            const li =
+                document.createElement(
+                    "li"
+                );
+
+            li.textContent =
+                "No strong categories detected yet.";
+
+            strengthList.appendChild(
+                li
+            );
+
+            return;
+        }
+
+
+        strong.slice(
+            0,
+            6
+        ).forEach(
+            function (item) {
+
+                const li =
+                    document.createElement(
+                        "li"
+                    );
+
+                li.textContent =
+                    "✓ " +
+                    item.criterion;
+
+                strengthList.appendChild(
+                    li
+                );
+
+            }
+        );
+
+    }
+
+
+    // =========================================================
+    // DOWNLOAD ANALYSIS
+    // =========================================================
+
+    function downloadAnalysis() {
+
+        if (!latestAnalysis) {
+
+            alert(
+                "Please analyze a resume first."
+            );
+
+            return;
+        }
+
+
+        const data =
+            latestAnalysis;
+
+
+        let report =
+            "RESUMATCH - RESUME ANALYSIS REPORT\n";
+
+        report +=
+            "====================================\n\n";
+
+        report +=
+            "Resume: " +
+            data.filename +
+            "\n";
+
+        report +=
+            "ATS Score: " +
+            data.ats_score +
+            "%\n";
+
+        report +=
+            "Confidence: " +
+            data.score_confidence +
+            "\n\n";
+
+
+        report +=
+            "ATS CATEGORY ANALYSIS\n";
+
+        report +=
+            "---------------------\n";
+
+
+        (data.criteria || []).forEach(
+            function (item) {
+
+                report +=
+                    item.criterion +
+                    ": " +
+                    item.score +
+                    "/" +
+                    item.max_score +
+                    " - " +
+                    item.status +
+                    "\n";
+
+            }
+        );
+
+
+        report +=
+            "\nIMPROVEMENT ADVICE\n";
+
+        report +=
+            "------------------\n";
+
+
+        (data.improvement_advice || []).forEach(
+            function (item) {
+
+                report +=
+                    "[" +
+                    item.priority +
+                    "] " +
+                    item.title +
+                    "\n";
+
+                report +=
+                    item.advice +
+                    "\n\n";
+
+            }
+        );
+
+
+        report +=
+            "\nTOP MATCHING SKILLS\n";
+
+        report +=
+            (data.top_matching_skills || []).join(
+                ", "
+            );
+
+        report +=
+            "\n\nSKILLS TO IMPROVE\n";
+
+        report +=
+            (data.skills_to_improve || []).join(
+                ", "
+            );
+
+
+        const blob =
+            new Blob(
+                [report],
+                {
+                    type:
+                        "text/plain"
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+        link.href =
+            url;
+
+        link.download =
+            "ResuMatch_Analysis_Report.txt";
+
+        document.body.appendChild(
+            link
+        );
+
+        link.click();
+
+        link.remove();
+
+        URL.revokeObjectURL(
+            url
+        );
+
+    }
+
+
+    // =========================================================
+    // RESET
+    // =========================================================
+
+    function resetAnalysis() {
+
+        latestAnalysis =
+            null;
+
+        resumeFile.value =
+            "";
+
+        fileName.textContent =
+            "No file selected";
+
+        analyzeButton.style.display =
+            "none";
+
+        statusMessage.textContent =
+            "";
+
+        document.getElementById(
+            "atsScore"
+        ).textContent =
+            "0%";
+
+        document.getElementById(
+            "scoreConfidence"
+        ).textContent =
+            "Not analyzed";
+
+        document.getElementById(
+            "scoreMessage"
+        ).textContent =
+            "Upload your resume to calculate your ATS compatibility score.";
+
+        document.getElementById(
+            "matchedCount"
+        ).textContent =
+            "0";
+
+        document.getElementById(
+            "improveCount"
+        ).textContent =
+            "0";
+
+        document.getElementById(
+            "missingCount"
+        ).textContent =
+            "0";
+
+        document.getElementById(
+            "categoryTotal"
+        ).textContent =
+            "18";
+
+        document.getElementById(
+            "categoryList"
+        ).innerHTML =
+            '<p class="empty-state">Upload and analyze your resume to see the 18-category breakdown.</p>';
+
+        document.getElementById(
+            "adviceList"
+        ).innerHTML =
+            "<li>Upload your resume to receive personalized improvement advice.</li>";
+
+        document.getElementById(
+            "matchingSkills"
+        ).innerHTML =
+            "";
+
+        document.getElementById(
+            "skillsToImprove"
+        ).innerHTML =
+            "";
+
+        document.getElementById(
+            "matchingSkillsEmpty"
+        ).style.display =
+            "block";
+
+        document.getElementById(
+            "skillsToImproveEmpty"
+        ).style.display =
+            "block";
+
+        document.getElementById(
+            "wordCount"
+        ).textContent =
+            "—";
+
+        document.getElementById(
+            "pageCount"
+        ).textContent =
+            "—";
+
+        document.getElementById(
+            "sectionCount"
+        ).textContent =
+            "—";
+
+        document.getElementById(
+            "actionCount"
+        ).textContent =
+            "—";
+
+        document.getElementById(
+            "metricCount"
+        ).textContent =
+            "—";
+
+        document.getElementById(
+            "qualityCriteria"
+        ).textContent =
+            "18";
+
+        document.getElementById(
+            "strengthList"
+        ).innerHTML =
+            "<li>Upload your resume to identify strengths.</li>";
+
+    }
+
+</script>
+
+</body>
+</html>
